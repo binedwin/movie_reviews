@@ -3,7 +3,7 @@ import styled from 'styled-components';
 import { Link } from 'react-router-dom';
 import { FiStar, FiHeart, FiMessageCircle, FiFilm, FiUser } from 'react-icons/fi';
 import { useAuth } from '../context/AuthContext';
-import { reviewsAPI } from '../utils/api';
+import { usersAPI } from '../utils/api';
 
 const Container = styled.div`
   max-width: 1000px;
@@ -235,17 +235,17 @@ const EmptyState = styled.div`
   }
 `;
 
-function AllReviews() {
+function LikedReviews() {
   const { user } = useAuth();
   const [reviews, setReviews] = useState([]);
   const [loading, setLoading] = useState(true);
   const [currentPage, setCurrentPage] = useState(1);
   const [pagination, setPagination] = useState({});
 
-  const fetchAllReviews = async (page = 1) => {
+  const fetchLikedReviews = async (page = 1) => {
     try {
       setLoading(true);
-      console.log('📝 모든 리뷰 조회 시작:', page);
+      console.log('❤️ 좋아요한 리뷰 조회 시작:', page);
       
       const params = {
         page: page,
@@ -254,11 +254,11 @@ function AllReviews() {
         sortOrder: 'desc'
       };
       
-      const response = await reviewsAPI.getAllReviews(params);
+      const response = await usersAPI.getLikedReviews(params);
       console.log('🔍 전체 응답:', response);
       console.log('🔍 response.data:', response.data);
       console.log('🔍 response.data 타입:', typeof response.data);
-      console.log('✅ 모든 리뷰 조회 성공:', response.data);
+      console.log('✅ 좋아요한 리뷰 조회 성공:', response.data);
       
       console.log('🔄 setReviews 호출 전 reviews:', reviews);
       
@@ -276,7 +276,7 @@ function AllReviews() {
       }
       setCurrentPage(page);
     } catch (error) {
-      console.error('❌ 모든 리뷰 조회 실패:', error);
+      console.error('❌ 좋아요한 리뷰 조회 실패:', error);
       console.error('❌ 오류 상세:', error.response?.data);
       console.error('❌ 오류 상태:', error.response?.status);
     } finally {
@@ -285,8 +285,12 @@ function AllReviews() {
   };
 
   useEffect(() => {
-    fetchAllReviews();
-  }, []);
+    if (user) {
+      fetchLikedReviews();
+    } else {
+      setLoading(false);
+    }
+  }, [user]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const formatDate = (dateString) => {
     const date = new Date(dateString);
@@ -309,18 +313,32 @@ function AllReviews() {
     );
   }
 
+  if (!user) {
+    return (
+      <Container>
+        <EmptyState>
+          <h3>로그인이 필요합니다</h3>
+          <p>좋아요한 리뷰를 확인하려면 로그인해주세요.</p>
+          <Link to="/login" className="browse-link">
+            로그인하기 →
+          </Link>
+        </EmptyState>
+      </Container>
+    );
+  }
+
   return (
     <Container>
       <Header>
-        <h1>모든 리뷰</h1>
-        <p>다른 사용자들이 작성한 모든 영화 리뷰를 확인해보세요! 📝✨</p>
+        <h1>좋아요한 리뷰</h1>
+        <p>내가 좋아요를 누른 리뷰들을 확인해보세요! ❤️✨</p>
       </Header>
 
       {console.log('📊 렌더링 시점 reviews.length:', reviews.length, 'reviews:', reviews)}
       {reviews.length === 0 ? (
         <EmptyState>
-          <h3>아직 작성된 리뷰가 없습니다</h3>
-          <p>첫 번째 리뷰를 작성해보세요!</p>
+          <h3>좋아요한 리뷰가 없습니다</h3>
+          <p>마음에 드는 리뷰에 좋아요를 눌러보세요!</p>
           <Link to="/movies" className="browse-link">
             영화 둘러보기 →
           </Link>
@@ -384,7 +402,7 @@ function AllReviews() {
           {pagination.totalPages > 1 && (
             <Pagination>
               <button 
-                onClick={() => fetchAllReviews(currentPage - 1)}
+                onClick={() => fetchLikedReviews(currentPage - 1)}
                 disabled={currentPage === 1}
               >
                 이전
@@ -393,7 +411,7 @@ function AllReviews() {
               {Array.from({ length: pagination.totalPages }, (_, i) => i + 1).map(page => (
                 <button
                   key={page}
-                  onClick={() => fetchAllReviews(page)}
+                  onClick={() => fetchLikedReviews(page)}
                   className={currentPage === page ? 'active' : ''}
                 >
                   {page}
@@ -401,7 +419,7 @@ function AllReviews() {
               ))}
               
               <button 
-                onClick={() => fetchAllReviews(currentPage + 1)}
+                onClick={() => fetchLikedReviews(currentPage + 1)}
                 disabled={currentPage === pagination.totalPages}
               >
                 다음
@@ -414,4 +432,4 @@ function AllReviews() {
   );
 }
 
-export default AllReviews;
+export default LikedReviews;
